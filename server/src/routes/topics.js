@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
     let sql = 'SELECT * FROM topics WHERE 1=1';
     const args = [];
 
-    if (source && ['twitter', 'hackernews', 'rss', 'github'].includes(source)) {
+    if (source && ['twitter', 'hackernews', 'rss', 'github', 'searxng', 'reddit'].includes(source)) {
       sql += ' AND source = ?';
       args.push(source);
     }

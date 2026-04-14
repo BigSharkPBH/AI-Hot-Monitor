@@ -7,6 +7,11 @@
 
 const TWITTER_API_BASE = 'https://api.twitterapi.io';
 
+// 质量过滤阈值：只保留有足够互动的原创推文
+const MIN_LIKES = 50;
+const MIN_RETWEETS = 20;
+const MIN_VIEWS = 2000;
+
 /**
  * 搜索推文
  * @param {string} query    - 搜索关键词
@@ -21,9 +26,10 @@ async function searchTweets(query, maxItems = 20) {
   }
 
   try {
+    // 使用 Top 排序获取更高质量的推文，加 -filter:replies 过滤回复
     const params = new URLSearchParams({
-      query,
-      queryType: 'Latest',
+      query: `${query} -filter:replies -filter:quote`,
+      queryType: 'Top',
     });
 
     const res = await fetch(
@@ -43,17 +49,37 @@ async function searchTweets(query, maxItems = 20) {
 
     const data = await res.json();
 
-    // twitterapi.io 返回格式：{ tweets: [...] } 或 { data: { tweets: [...] } }
+    // twitterapi.io 返回格式：{ tweets: [...] }
     const tweets = data.tweets || data.data?.tweets || [];
 
-    return tweets.slice(0, maxItems).map(t => ({
+    // 质量过滤：只保留原创推文，且互动量达标
+    const filtered = tweets.filter(t => {
+      // 过滤回复和引用
+      if (t.isReply === true) return false;
+      if (t.inReplyToId) return false;
+
+      // 互动量门槛
+      const likes = Number(t.likeCount) || 0;
+      const retweets = Number(t.retweetCount) || 0;
+      const views = Number(t.viewCount) || 0;
+
+      if (likes < MIN_LIKES) return false;
+      if (retweets < MIN_RETWEETS) return false;
+      if (views < MIN_VIEWS) return false;
+
+      return true;
+    });
+
+    console.log(`[Twitter] 原始 ${tweets.length} 条，质量过滤后 ${filtered.length} 条`);
+
+    return filtered.slice(0, maxItems).map(t => ({
       source: 'twitter',
       source_id: t.id || t.tweet_id || String(t.id_str),
       title: (t.text || t.full_text || '').substring(0, 200),
       content: t.text || t.full_text || '',
-      url: t.url || (t.user ? `https://x.com/${t.user.screen_name}/status/${t.id_str || t.id}` : ''),
-      author: t.user?.screen_name || t.author?.screen_name || '',
-      published_at: t.created_at ? new Date(t.created_at).toISOString() : new Date().toISOString(),
+      url: t.url || (t.author ? `https://x.com/${t.author.username}/status/${t.id}` : ''),
+      author: t.author?.username || t.user?.screen_name || '',
+      published_at: t.createdAt ? new Date(t.createdAt).toISOString() : new Date().toISOString(),
     }));
   } catch (err) {
     console.error('[Twitter] network error:', err.message);

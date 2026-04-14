@@ -8,16 +8,31 @@ const HN_BASE = 'https://hacker-news.firebaseio.com/v0';
 
 async function fetchHackerNews(limit = 20) {
   try {
-    // 获取最新故事 ID 列表
-    const res = await fetch(`${HN_BASE}/newstories.json`);
-    if (!res.ok) throw new Error(`HN API status: ${res.status}`);
+    // 同时抓取最热和最新，去重后合并，确保捕获高热度内容
+    const [topRes, newRes] = await Promise.all([
+      fetch(`${HN_BASE}/topstories.json`),
+      fetch(`${HN_BASE}/newstories.json`),
+    ]);
 
-    const ids = await res.json();
-    const topIds = ids.slice(0, limit);
+    if (!topRes.ok && !newRes.ok) throw new Error('HN API both failed');
+
+    const topIds = topRes.ok ? (await topRes.json()).slice(0, limit) : [];
+    const newIds = newRes.ok ? (await newRes.json()).slice(0, Math.floor(limit / 2)) : [];
+
+    // 合并去重，topstories 优先
+    const seenIds = new Set();
+    const mergedIds = [];
+    for (const id of [...topIds, ...newIds]) {
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        mergedIds.push(id);
+      }
+    }
+    const finalIds = mergedIds.slice(0, limit);
 
     // 并发获取每篇文章详情
     const items = await Promise.allSettled(
-      topIds.map(id =>
+      finalIds.map(id =>
         fetch(`${HN_BASE}/item/${id}.json`).then(r => r.json())
       )
     );

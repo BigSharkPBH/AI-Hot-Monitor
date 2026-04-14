@@ -8,6 +8,8 @@ const { fetchHackerNews } = require('../lib/sources/hackernews');
 const { fetchRSS } = require('../lib/sources/rss');
 const { fetchGithubTrending } = require('../lib/sources/github');
 const { searchTweets } = require('../lib/sources/twitter');
+const { fetchSearXNG } = require('../lib/sources/searxng');
+const { fetchReddit } = require('../lib/sources/reddit');
 
 let isCollecting = false;
 
@@ -30,15 +32,17 @@ async function collect() {
     const domain = domainRow.rows[0]?.value || 'AI 编程';
 
     // 并发拉取所有数据源
-    const [hnItems, rssItems, githubItems, twitterItems] = await Promise.all([
+    const [hnItems, rssItems, githubItems, twitterItems, searxngItems, redditItems] = await Promise.all([
       fetchHackerNews(20),
       fetchRSS(8),
       fetchGithubTrending('', 'daily', 15),
       searchTweets(`${domain} lang:zh OR lang:en`, 20),
+      fetchSearXNG(`${domain} latest news`, 15),
+      fetchReddit(domain, 15),
     ]);
 
-    const allItems = [...hnItems, ...rssItems, ...githubItems, ...twitterItems];
-    console.log(`[Collector] 采集到 ${allItems.length} 条原始数据`);
+    const allItems = [...hnItems, ...rssItems, ...githubItems, ...twitterItems, ...searxngItems, ...redditItems];
+    console.log(`[Collector] 采集到 ${allItems.length} 条原始数据 (HN:${hnItems.length} RSS:${rssItems.length} GitHub:${githubItems.length} Twitter:${twitterItems.length} SearXNG:${searxngItems.length} Reddit:${redditItems.length})`);
 
     // 获取用户关键词（用于 AI 分析）
     const kwRes = await db.execute("SELECT word FROM keywords WHERE is_active = 1");

@@ -38,9 +38,23 @@ async function analyzeContent(title, content, keywords = []) {
 标题：${title}
 内容：${(content || '').substring(0, 800)}${keywordsText}
 
+判断标准（必须严格执行）：
+1. 以下内容必须标记为 is_relevant: false：
+   - 低质量随意发言、无实质信息的闲聊
+   - 广告、营销推广、垃圾信息
+   - 未经证实的假新闻、谣言
+   - 与 AI/编程/技术领域无关的内容
+   - 纯转发无原创观点的内容
+2. heat_score 评分参考：
+   - 9-10：重大产品发布/更新、行业里程碑事件
+   - 7-8：有价值的技术突破、重要开源项目
+   - 5-6：一般性技术讨论、有参考价值的内容
+   - 3-4：边缘相关、信息量较少
+   - 1-2：几乎无价值
+
 请返回如下 JSON（不要包含代码块标记）：
 {
-  "is_relevant": true或false（内容是否真实、有价值，非垃圾/广告/假新闻）,
+  "is_relevant": true或false,
   "relevance_reason": "简短说明判断理由",
   "heat_score": 1-10的整数（热度：10最热，1最冷），
   "summary": "一句话中文摘要（30字以内）",
