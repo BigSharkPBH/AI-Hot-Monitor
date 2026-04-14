@@ -1,42 +1,30 @@
-// 热度徽章：1-10 分对应不同颜色和标签
+const HEAT_LEVELS = [
+  { min: 9, label: 'ULTRA',  color: '#ef4444', bg: 'rgba(239,68,68,0.1)',    border: 'rgba(239,68,68,0.35)' },
+  { min: 7, label: 'HOT',    color: '#f97316', bg: 'rgba(249,115,22,0.1)',   border: 'rgba(249,115,22,0.3)' },
+  { min: 5, label: 'RISING', color: '#22d3ee', bg: 'rgba(34,211,238,0.08)', border: 'rgba(34,211,238,0.25)' },
+  { min: 0, label: 'WARM',   color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.2)' },
+]
+
 export default function HeatBadge({ score }) {
   const s = Number(score) || 0
-
-  let label, colorClass, heatBorder
-  if (s >= 9) {
-    label = '🔥 极热'
-    colorClass = 'text-red-alert bg-red-alert/10 border-red-alert/40'
-    heatBorder = 'heat-border-ultra'
-  } else if (s >= 7) {
-    label = '🌶 热门'
-    colorClass = 'text-orange-hot bg-orange-hot/10 border-orange-hot/30'
-    heatBorder = 'heat-border-high'
-  } else if (s >= 5) {
-    label = '⚡ 上升'
-    colorClass = 'text-cyan-neon bg-cyan-neon/10 border-cyan-neon/25'
-    heatBorder = 'heat-border-mid'
-  } else {
-    label = '…'
-    colorClass = 'text-gray-dim bg-white/5 border-white/10'
-    heatBorder = 'heat-border-low'
-  }
+  const level = HEAT_LEVELS.find(l => s >= l.min)
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-mono font-medium ${colorClass}`}
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[11px] font-semibold tracking-wider"
+      style={{ color: level.color, background: level.bg, border: `1px solid ${level.border}` }}
       aria-label={`热度评分 ${s} 分`}
     >
-      {label} <span className="opacity-70">{s}</span>
+      {level.label}
+      <span className="opacity-60">{s}</span>
     </span>
   )
 }
 
-export { }
-// 导出 heatBorder 工具函数供卡片使用
-export function getHeatBorderClass(score) {
+export function getHeatLevel(score) {
   const s = Number(score) || 0
-  if (s >= 9) return 'heat-border-ultra'
-  if (s >= 7) return 'heat-border-high'
-  if (s >= 5) return 'heat-border-mid'
-  return 'heat-border-low'
+  if (s >= 9) return 'ultra'
+  if (s >= 7) return 'high'
+  if (s >= 5) return 'mid'
+  return 'low'
 }
