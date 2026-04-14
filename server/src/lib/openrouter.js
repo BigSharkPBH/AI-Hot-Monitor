@@ -15,7 +15,7 @@ const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
  */
 async function analyzeContent(title, content, keywords = []) {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-chat';
+  const model = process.env.OPENROUTER_MODEL || 'deepseek/deepseek-v3.2';
 
   if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
     // 未配置 API Key，返回默认值
