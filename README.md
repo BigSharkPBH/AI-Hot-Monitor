@@ -1,6 +1,6 @@
 # Hot-Monitor — AI 热点雷达
 
-面向 AI 编程博主的热点监控工具。自动采集 Twitter/X、Hacker News、GitHub Trending、RSS 等平台的最新热点，通过 AI 评分、摘要和关键词命中，实时推送通知。
+面向 AI 编程博主的热点监控工具。自动采集 Twitter/X、Hacker News、GitHub Trending、RSS、SearXNG、Reddit 等平台的最新热点，通过 AI 评分、摘要和关键词命中，实时推送通知。
 
 ---
 
@@ -170,6 +170,7 @@ Hot-Monitor/
 ├── client/          # 前端 React + Vite + Tailwind CSS
 ├── server/          # 后端 Node.js + Express + LibSQL
 │   ├── src/
+│   │   └── lib/sources/  # 数据源：twitter / hackernews / rss / github / searxng / reddit
 │   ├── data/        # SQLite 数据库（运行时生成，已 gitignore）
 │   └── .env         # 环境变量（已 gitignore，勿提交）
 ├── .env.example     # 环境变量模板
@@ -178,7 +179,20 @@ Hot-Monitor/
 
 ---
 
-## 九、常见问题
+## 九、数据源与质量过滤
+
+| 数据源 | 说明 | 是否需要 Key |
+|--------|------|----------|
+| Twitter/X | 原创推文，内置互动量过滤（点赞≥50/转发≥20/浏览≥2000） | 需要 |
+| Hacker News | 技术热帖（topstories + newstories 合并） | 不需要 |
+| RSS | TechCrunch AI、ArXiv CS.AI、MIT Tech Review | 不需要 |
+| GitHub Trending | 热门 AI/编程项目日榜 | 不需要 |
+| SearXNG | 元搜索引擎，聚合 Google/Bing/DuckDuckGo | 不需要 |
+| Reddit | r/artificial、r/MachineLearning 等技术社区 | 不需要 |
+
+---
+
+## 十、常见问题
 
 **Q: 采集后没有数据？**  
 A: 检查 `server/.env` 中的 `OPENROUTER_API_KEY` 是否填写正确。HackerNews、RSS、GitHub 无需 Key 即可采集。
