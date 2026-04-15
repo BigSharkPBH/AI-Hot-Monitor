@@ -18,7 +18,7 @@ const MIN_VIEWS = 2000;
  * @param {number} maxItems - 最多返回数量
  * @returns {Array}
  */
-async function searchTweets(query, maxItems = 20) {
+async function searchTweets(query, maxItems = 20, { relaxedFilters = false } = {}) {
   const apiKey = process.env.TWITTER_API_KEY;
   if (!apiKey || apiKey === 'your_twitterapi_io_key_here') {
     console.warn('[Twitter] API Key 未配置，跳过 Twitter 数据源');
@@ -53,10 +53,14 @@ async function searchTweets(query, maxItems = 20) {
     const tweets = data.tweets || data.data?.tweets || [];
 
     // 质量过滤：只保留原创推文，且互动量达标
+    // relaxedFilters=true 用于博主追踪模式，仅过滤回复不检查互动量
     const filtered = tweets.filter(t => {
       // 过滤回复和引用
       if (t.isReply === true) return false;
       if (t.inReplyToId) return false;
+
+      // 博主追踪模式跳过互动量检查
+      if (relaxedFilters) return true;
 
       // 互动量门槛
       const likes = Number(t.likeCount) || 0;

@@ -24,6 +24,19 @@ const RSS_FEEDS = [
     name: 'ArXiv CS.AI',
     url: 'https://rss.arxiv.org/rss/cs.AI',
   },
+  // 中文科技源
+  {
+    name: '36氪',
+    url: 'https://36kr.com/feed',
+  },
+  {
+    name: '少数派',
+    url: 'https://sspai.com/feed',
+  },
+  {
+    name: '开源中国',
+    url: 'https://www.oschina.net/news/rss',
+  },
 ];
 
 async function fetchRSS(limit = 10) {

@@ -10,6 +10,9 @@ const { fetchGithubTrending } = require('../lib/sources/github');
 const { searchTweets } = require('../lib/sources/twitter');
 const { fetchSearXNG } = require('../lib/sources/searxng');
 const { fetchReddit } = require('../lib/sources/reddit');
+const { fetchV2EX } = require('../lib/sources/v2ex');
+const { fetchBilibili } = require('../lib/sources/bilibili');
+const { fetchWeibo } = require('../lib/sources/weibo');
 
 let isCollecting = false;
 
@@ -31,22 +34,47 @@ async function collect() {
     const domainRow = await db.execute("SELECT value FROM config WHERE key = 'topics_domain'");
     const domain = domainRow.rows[0]?.value || 'AI 编程';
 
+    // 获取用户关键词（用于 AI 分析 + 博主追踪）
+    const kwRes = await db.execute("SELECT word FROM keywords WHERE is_active = 1");
+    const keywords = kwRes.rows.map(r => r.word);
+
+    // 分离博主关键词（@开头的视为 Twitter 博主账号）
+    const bloggerHandles = keywords.filter(kw => kw.startsWith('@'));
+
     // 并发拉取所有数据源
-    const [hnItems, rssItems, githubItems, twitterItems, searxngItems, redditItems] = await Promise.all([
+    const [hnItems, rssItems, githubItems, twitterItems, searxngItems, redditItems, v2exItems, bilibiliItems, weiboItems] = await Promise.all([
       fetchHackerNews(20),
       fetchRSS(8),
       fetchGithubTrending('', 'daily', 15),
       searchTweets(`${domain} lang:zh OR lang:en`, 20),
       fetchSearXNG(`${domain} latest news`, 15),
       fetchReddit(domain, 15),
+      fetchV2EX(20),
+      fetchBilibili(domain, 15),
+      fetchWeibo(domain, 15),
     ]);
 
-    const allItems = [...hnItems, ...rssItems, ...githubItems, ...twitterItems, ...searxngItems, ...redditItems];
-    console.log(`[Collector] 采集到 ${allItems.length} 条原始数据 (HN:${hnItems.length} RSS:${rssItems.length} GitHub:${githubItems.length} Twitter:${twitterItems.length} SearXNG:${searxngItems.length} Reddit:${redditItems.length})`);
+    // 博主追踪：通过 from:username 获取指定博主最近推文（放宽质量过滤）
+    let bloggerItems = [];
+    if (bloggerHandles.length > 0) {
+      const bloggerResults = await Promise.allSettled(
+        bloggerHandles.map(kw => {
+          const username = kw.slice(1); // 去掉 @
+          return searchTweets(`from:${username}`, 10, { relaxedFilters: true });
+        })
+      );
+      bloggerItems = bloggerResults
+        .filter(r => r.status === 'fulfilled')
+        .flatMap(r => r.value);
+      console.log(`[Collector] 博主追踪 ${bloggerHandles.length} 个账号，获取 ${bloggerItems.length} 条`);
+    }
 
-    // 获取用户关键词（用于 AI 分析）
-    const kwRes = await db.execute("SELECT word FROM keywords WHERE is_active = 1");
-    const keywords = kwRes.rows.map(r => r.word);
+    const allItems = [
+      ...hnItems, ...rssItems, ...githubItems, ...twitterItems,
+      ...searxngItems, ...redditItems, ...v2exItems, ...bilibiliItems,
+      ...weiboItems, ...bloggerItems,
+    ];
+    console.log(`[Collector] 采集到 ${allItems.length} 条原始数据 (HN:${hnItems.length} RSS:${rssItems.length} GitHub:${githubItems.length} Twitter:${twitterItems.length} SearXNG:${searxngItems.length} Reddit:${redditItems.length} V2EX:${v2exItems.length} Bilibili:${bilibiliItems.length} Weibo:${weiboItems.length} 博主:${bloggerItems.length})`);
 
     let inserted = 0;
     let skipped = 0;

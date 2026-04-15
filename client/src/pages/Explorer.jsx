@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api'
 import TopicCard from '../components/TopicCard'
 
-const SOURCES = ['全部', 'twitter', 'hackernews', 'rss', 'github', 'searxng', 'reddit']
+const SOURCES = ['全部', 'twitter', 'hackernews', 'rss', 'github', 'searxng', 'reddit', 'v2ex', 'bilibili', 'weibo']
 const PAGE_SIZE = 20
 
 export default function Explorer() {
